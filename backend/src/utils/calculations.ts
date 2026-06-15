@@ -14,10 +14,10 @@ import { ActivityCategory, ActivityType } from '@cft/shared';
  * @returns CO2 emissions in kg
  */
 export const calculateCO2 = (
-  category: ActivityCategory,
+  _category: ActivityCategory,
   type: ActivityType,
   amount: number,
-  unit: string
+  _unit: string
 ): number => {
   // TODO: Implement actual CO2 calculation logic
   // This is a placeholder that returns a simple calculation
@@ -64,7 +64,7 @@ export const calculateCO2 = (
  * @returns Baseline carbon score in kg CO2e per year
  */
 export const calculateBaselineScore = (
-  responses: Record<string, string | number>
+  _responses: Record<string, string | number>
 ): number => {
   // TODO: Implement actual baseline calculation logic
   // This is a placeholder

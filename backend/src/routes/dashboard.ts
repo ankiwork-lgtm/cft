@@ -210,7 +210,6 @@ router.get('/summary', protectedRoute, async (req: Request, res: Response) => {
     if (goalTarget !== undefined) {
       // Goal target is a percentage reduction (e.g., 20 means 20% reduction)
       // Progress is how much of that reduction has been achieved
-      const targetScore = baselineScore + goalTarget;
       const actualImprovement = currentScore - baselineScore;
       progressTowardGoal = goalTarget > 0
         ? Math.min(100, Math.max(0, (actualImprovement / goalTarget) * 100))

@@ -14,7 +14,6 @@ import admin from 'firebase-admin';
 
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
-  const isProduction = process.env.NODE_ENV === 'production';
   const isCloudRun = process.env.K_SERVICE !== undefined; // Cloud Run sets K_SERVICE
 
   if (isCloudRun) {
@@ -41,8 +40,8 @@ if (!admin.apps.length) {
 }
 
 // Export Firestore and Auth instances
-export const db = admin.firestore();
-export const auth = admin.auth();
+export const db: admin.firestore.Firestore = admin.firestore();
+export const auth: admin.auth.Auth = admin.auth();
 
 // Configure Firestore settings
 db.settings({

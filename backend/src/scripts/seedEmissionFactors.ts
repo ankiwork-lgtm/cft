@@ -3,6 +3,13 @@
  * Populates Firestore with emission factor reference data
  */
 
+// Load environment variables BEFORE importing Firebase config
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env file from backend directory
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
+
 import { db } from '../config/firebase';
 import { EmissionFactorInput } from '@cft/shared';
 

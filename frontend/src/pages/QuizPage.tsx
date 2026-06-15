@@ -53,10 +53,9 @@ export const QuizPage: React.FC = () => {
 
     try {
       // Update user's goal target
-      const request: SubmitQuizRequest = {
-        responses: [], // Already submitted
-        goalTarget,
-      };
+      // Note: Goal target update logic would go here
+      // For now, navigate to dashboard with the selected goal
+      console.log('Goal target selected:', goalTarget);
 
       // We need to update the goal separately or include it in the initial submission
       // For now, let's navigate to dashboard

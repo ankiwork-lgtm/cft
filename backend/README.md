@@ -326,6 +326,48 @@ docker run -p 3000:3000 \
 
 ## ☁️ Deployment to Cloud Run
 
+### Option 1: Deploy with Cloud Build (No Docker Required) ⭐ Recommended
+
+Deploy directly from source code without needing Docker installed locally:
+
+```bash
+# Set your project ID
+gcloud config set project [PROJECT-ID]
+
+# Deploy from project root (Cloud Build will handle everything)
+gcloud run deploy cft-backend \
+  --source . \
+  --region us-central1 \
+  --platform managed \
+  --allow-unauthenticated \
+  --set-env-vars NODE_ENV=production
+```
+
+**What happens:**
+- Cloud Build automatically detects your `Dockerfile`
+- Builds the container image in Google Cloud
+- Pushes to Artifact Registry
+- Deploys to Cloud Run
+- No local Docker installation needed!
+
+**First-time setup:**
+```bash
+# Install gcloud CLI if not already installed
+# https://cloud.google.com/sdk/docs/install
+
+# Authenticate
+gcloud auth login
+
+# Enable required APIs
+gcloud services enable run.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+```
+
+### Option 2: Deploy with Docker (Traditional Method)
+
+If you have Docker installed locally:
+
 ```bash
 # Build and push to Container Registry
 docker build -t gcr.io/[PROJECT-ID]/cft-backend -f backend/Dockerfile .
@@ -340,7 +382,11 @@ gcloud run deploy cft-backend \
   --set-env-vars NODE_ENV=production
 ```
 
-Cloud Run will automatically use the default service account (no credentials needed).
+### Option 3: Deploy with GitHub Actions (Automated CI/CD)
+
+The project includes GitHub Actions workflows for automated deployment. See `DEPLOYMENT_CHECKLIST.md` for setup instructions.
+
+**Note:** Cloud Run will automatically use the default service account (no credentials needed).
 
 ## 🧪 Testing
 

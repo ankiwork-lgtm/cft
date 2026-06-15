@@ -13,7 +13,6 @@ import {
 } from '@cft/shared';
 import {
   calculateFootprintFromQuiz,
-  getPercentageFromAverage,
 } from '../utils/quizCalculator';
 import { NATIONAL_AVERAGE_CO2 } from '@cft/shared';
 

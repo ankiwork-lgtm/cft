@@ -114,7 +114,7 @@ router.get('/', protectedRoute, async (req: Request, res: Response) => {
  * GET /api/tips/preview
  * Preview all available tip rules (for debugging/admin)
  */
-router.get('/preview', protectedRoute, async (req: Request, res: Response) => {
+router.get('/preview', protectedRoute, async (_req: Request, res: Response) => {
   try {
     const { TIP_RULES } = await import('@cft/shared');
     

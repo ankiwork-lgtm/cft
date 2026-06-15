@@ -31,7 +31,7 @@ import { EarthHealthMeter } from '../components/common/EarthHealthMeter';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { EmptyState } from '../components/common/EmptyState';
-import { translateCO2, getPrimaryComparison } from '../utils/co2Translator';
+import { getPrimaryComparison } from '../utils/co2Translator';
 
 const COLORS = {
   transport: '#3b82f6',
@@ -214,8 +214,6 @@ export function Dashboard() {
   }));
 
   const { goalProgress } = dashboardData;
-  const scoreDelta = goalProgress.currentScore - goalProgress.baselineScore;
-  const scoreImprovement = scoreDelta > 0;
 
   // Get CO2 comparison
   const totalComparison = getPrimaryComparison(dashboardData.totalCO2);
@@ -357,10 +355,10 @@ export function Dashboard() {
                   fill="#8884d8"
                   dataKey="value"
                 >
-                  {categoryChartData.map((entry, index) => (
-                    <Cell 
-                      key={`cell-${index}`} 
-                      fill={COLORS[dashboardData.categoryBreakdown[index].category as keyof typeof COLORS]} 
+                  {categoryChartData.map((_entry, index) => (
+                    <Cell
+                      key={`cell-${index}`}
+                      fill={COLORS[dashboardData.categoryBreakdown[index].category as keyof typeof COLORS]}
                     />
                   ))}
                 </Pie>

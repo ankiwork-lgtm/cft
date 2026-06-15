@@ -1,10 +1,17 @@
 /**
  * Seed Script for Firestore
  * Loads emission factors and tip templates into Firestore
- * 
+ *
  * Run with: npm run seed (add to package.json scripts)
  * Or: tsx src/scripts/seedData.ts
  */
+
+// Load environment variables BEFORE importing Firebase config
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env file from backend directory
+dotenv.config({ path: path.resolve(__dirname, '../../.env') });
 
 import { db } from '../config/firebase';
 import { EmissionFactorInput, TipTemplateInput } from '@cft/shared';

@@ -114,6 +114,7 @@ router.post('/entries', protectedRoute, async (req: Request, res: Response) => {
     const entry: ActivityLogEntry = {
       id: docRef.id,
       ...entryData,
+      notes: entryData.notes ?? undefined,
     };
 
     console.log(`✅ Activity logged: ${activityType} (${co2Kg.toFixed(2)} kg CO2e)`);

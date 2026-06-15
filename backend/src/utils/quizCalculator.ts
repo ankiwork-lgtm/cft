@@ -5,7 +5,7 @@
  * using documented assumptions and conversion factors.
  */
 
-import { QuizResponse, QuizQuestion, QuizOption } from '@cft/shared';
+import { QuizResponse } from '@cft/shared';
 import { QUIZ_QUESTIONS, NATIONAL_AVERAGE_CO2 } from '@cft/shared';
 
 interface QuizCalculationResult {

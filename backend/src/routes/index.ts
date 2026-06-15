@@ -3,17 +3,12 @@
  */
 
 import { Router, Request, Response } from 'express';
-import { verifyAuth } from '../middleware/auth';
-import { initializeUser } from '../middleware/initializeUser';
 import quizRoutes from './quiz';
 import logsRoutes from './logs';
 import dashboardRoutes from './dashboard';
 import tipsRoutes from './tips';
 
 const router = Router();
-
-// Middleware chain for protected routes: verify auth, then initialize user
-const protectedRoute = [verifyAuth, initializeUser];
 
 // Public routes (no auth required)
 router.get('/', (_req: Request, res: Response) => {
