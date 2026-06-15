@@ -5,7 +5,7 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "tsc -b",
     "start": "node dist/index.js",
     "seed": "tsx src/scripts/seedData.ts",
     "seed:emissions": "tsx src/scripts/seedEmissionFactors.ts",

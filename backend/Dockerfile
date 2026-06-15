@@ -10,12 +10,19 @@ COPY package*.json ./
 COPY shared/package*.json ./shared/
 COPY backend/package*.json ./backend/
 
+# Copy root tsconfig (required by shared/ and backend/ which extend it)
+COPY tsconfig.json ./
+
 # Install all dependencies (including devDependencies for building)
 RUN npm ci --workspace=backend --workspace=shared
 
 # Copy source code
 COPY shared/ ./shared/
 COPY backend/ ./backend/
+
+# Remove any stale .tsbuildinfo files from local machine to force a clean build
+# (composite: true uses these to skip recompilation, which can prevent .d.ts from being emitted)
+RUN rm -f ./shared/tsconfig.tsbuildinfo ./backend/tsconfig.tsbuildinfo
 
 # Build shared package
 RUN npm run build --workspace=shared

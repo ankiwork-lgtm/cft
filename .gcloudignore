@@ -1,0 +1,56 @@
+# Ignore frontend directory - not needed for backend deployment
+frontend/
+
+# Ignore documentation
+docs/
+*.md
+!README.md
+
+# Ignore git files
+.git
+.gitignore
+.github/
+
+# Ignore IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Ignore test files
+**/__tests__/
+**/*.test.ts
+**/*.test.tsx
+**/*.spec.ts
+**/*.spec.tsx
+
+# Ignore development files
+.env
+.env.local
+.env.*.local
+*.log
+
+# Ignore build artifacts that will be rebuilt
+node_modules/
+dist/
+build/
+.cache/
+*.tsbuildinfo
+
+# NOTE: package-lock.json must NOT be ignored - npm ci requires it
+# NOTE: tsconfig.json must NOT be ignored - shared/backend configs extend it
+
+# Ignore Firebase files not needed for backend
+.firebaserc
+firebase.json
+firestore.rules
+firestore.indexes.json
+firestore-debug.log
+
+# Ignore service account key (should use Secret Manager)
+serviceAccountKey.json
+
+# Ignore other config files
+.prettierrc.json
+.eslintrc.json
