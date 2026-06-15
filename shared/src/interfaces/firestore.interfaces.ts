@@ -21,7 +21,12 @@ export interface UserDocument {
   email: string;
   displayName: string;
   createdAt: FirestoreTimestamp;
+  quizCompleted: boolean;
+  quizAnswers?: Record<string, string | number>;
   baselineScore: number;
+  currentScore: number;
+  footprintEstimate?: number; // Annual CO2 in kg
+  goalTarget?: number; // Percentage reduction goal (5, 10, or 15)
   preferences: UserPreferences;
 }
 

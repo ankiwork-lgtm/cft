@@ -3,7 +3,12 @@
  * Handles all API requests to the backend
  */
 
-import { ApiResponse } from '@cft/shared';
+import {
+  ApiResponse,
+  SubmitQuizRequest,
+  SubmitQuizResponse,
+  DashboardSummary
+} from '@cft/shared';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
@@ -50,11 +55,40 @@ const apiRequest = async <T>(
  * API client methods
  */
 export const api = {
-  // Quiz endpoints
-  submitQuiz: async (responses: Record<string, string | number>) => {
-    return apiRequest('/quiz', {
+  // Generic request methods
+  get: async <T>(endpoint: string) => {
+    return apiRequest<T>(endpoint, { method: 'GET' });
+  },
+
+  post: async <T>(endpoint: string, data: unknown) => {
+    return apiRequest<T>(endpoint, {
       method: 'POST',
-      body: JSON.stringify({ responses }),
+      body: JSON.stringify(data),
+    });
+  },
+
+  put: async <T>(endpoint: string, data: unknown) => {
+    return apiRequest<T>(endpoint, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  delete: async <T>(endpoint: string) => {
+    return apiRequest<T>(endpoint, { method: 'DELETE' });
+  },
+
+  // Quiz endpoints
+  submitQuiz: async (request: SubmitQuizRequest) => {
+    return apiRequest<SubmitQuizResponse>('/quiz', {
+      method: 'POST',
+      body: JSON.stringify(request),
+    });
+  },
+
+  getQuizResult: async () => {
+    return apiRequest<SubmitQuizResponse>('/quiz/result', {
+      method: 'GET',
     });
   },
 
@@ -69,6 +103,11 @@ export const api = {
       method: 'POST',
       body: JSON.stringify({ activity }),
     });
+  },
+
+  // Dashboard endpoints
+  getDashboardSummary: async (range: 'week' | 'month' = 'week') => {
+    return apiRequest<DashboardSummary>(`/dashboard/summary?range=${range}`);
   },
 
   // Score endpoints

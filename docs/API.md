@@ -367,6 +367,143 @@ Delete an activity.
 - `404 NOT_FOUND`: Activity not found
 
 ---
+---
+
+## Dashboard Endpoints
+
+### Get Dashboard Summary
+
+Get aggregated dashboard data with CO2 trends, category breakdown, and goal progress.
+
+**Endpoint**: `GET /api/dashboard/summary`
+
+**Authentication**: Required
+
+**Query Parameters**:
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `range` | string | No | Time range: `week` or `month` (default: `week`) |
+
+**Example Request**:
+```
+GET /api/dashboard/summary?range=month
+```
+
+**Response**:
+```json
+{
+  "success": true,
+  "data": {
+    "totalCO2": 45.5,
+    "categoryBreakdown": [
+      {
+        "category": "transport",
+        "co2Kg": 20.5,
+        "percentage": 45.1
+      },
+      {
+        "category": "food",
+        "co2Kg": 15.0,
+        "percentage": 33.0
+      },
+      {
+        "category": "energy",
+        "co2Kg": 8.0,
+        "percentage": 17.6
+      },
+      {
+        "category": "shopping",
+        "co2Kg": 2.0,
+        "percentage": 4.4
+      }
+    ],
+    "dailyTotals": [
+      {
+        "date": "2026-06-08",
+        "total": 6.5,
+        "byCategory": {
+          "transport": 3.0,
+          "food": 2.5,
+          "energy": 1.0,
+          "shopping": 0.0
+        }
+      },
+      {
+        "date": "2026-06-09",
+        "total": 7.2,
+        "byCategory": {
+          "transport": 3.5,
+          "food": 2.0,
+          "energy": 1.2,
+          "shopping": 0.5
+        }
+      }
+    ],
+    "goalProgress": {
+      "currentScore": 52,
+      "baselineScore": 50,
+      "percentageChange": 4.0,
+      "goalTarget": 10,
+      "progressTowardGoal": 20.0
+    },
+    "period": {
+      "range": "week",
+      "startDate": "2026-06-08",
+      "endDate": "2026-06-15"
+    },
+    "hasData": true
+  }
+}
+```
+
+**Response Fields**:
+- `totalCO2`: Total CO2 emissions for the period (kg CO2e)
+- `categoryBreakdown`: Array of emissions by category with percentages
+- `dailyTotals`: Array of daily totals with category breakdown
+- `goalProgress`: Score and goal tracking information
+  - `currentScore`: Current carbon score (0-100, higher is better)
+  - `baselineScore`: Initial score from quiz
+  - `percentageChange`: Percentage change from baseline
+  - `goalTarget`: User's reduction goal percentage (optional)
+  - `progressTowardGoal`: Progress toward goal as percentage (optional)
+- `period`: Date range information
+- `hasData`: Boolean indicating if user has logged any activities
+
+**Empty State Response** (when user has no activity logs):
+```json
+{
+  "success": true,
+  "data": {
+    "totalCO2": 0,
+    "categoryBreakdown": [],
+    "dailyTotals": [],
+    "goalProgress": {
+      "currentScore": 50,
+      "baselineScore": 50,
+      "percentageChange": 0
+    },
+    "period": {
+      "range": "week",
+      "startDate": "2026-06-08",
+      "endDate": "2026-06-15"
+    },
+    "hasData": false
+  }
+}
+```
+
+**Error Responses**:
+- `400 INVALID_RANGE`: Invalid range parameter (must be 'week' or 'month')
+- `401 UNAUTHORIZED`: Missing or invalid token
+- `404 USER_NOT_FOUND`: User data not found
+
+**Notes**:
+- The endpoint automatically updates the user's `currentScore` based on recent activity
+- Score calculation compares daily average emissions to baseline
+- Week range: last 7 days
+- Month range: last 30 days
+- All aggregation is performed server-side for optimal performance
+
 
 ## Score Endpoints
 
@@ -491,9 +628,9 @@ GET /api/scores/history?startDate=2024-01-01&endDate=2024-01-31
 
 ## Tips Endpoints
 
-### Get Tips
+### Get Personalized Tips
 
-Get personalized tips for the user.
+Get personalized carbon reduction tips based on the current week's activity data.
 
 **Endpoint**: `GET /api/tips`
 
@@ -502,11 +639,11 @@ Get personalized tips for the user.
 **Query Parameters**:
 | Parameter | Type | Required | Description |
 |-----------|------|----------|-------------|
-| `weekStart` | string (YYYY-MM-DD) | No | Get tips for specific week (default: current week) |
+| `limit` | number | No | Number of tips to return (default: 5, max: 10) |
 
 **Example Request**:
 ```
-GET /api/tips?weekStart=2024-01-15
+GET /api/tips?limit=5
 ```
 
 **Response**:
@@ -514,54 +651,137 @@ GET /api/tips?weekStart=2024-01-15
 {
   "success": true,
   "data": {
-    "tips": {
-      "id": "tips123",
-      "userId": "user123",
-      "weekStart": "2024-01-15T00:00:00.000Z",
-      "tips": [
-        {
-          "id": "tip1",
-          "userId": "user123",
-          "title": "Reduce transport emissions",
-          "description": "Your transport activities generated 180.00 kg CO2e. Consider alternatives.",
-          "category": "transport",
-          "priority": "high",
-          "potentialSavings": 54.0,
-          "actionable": true,
-          "reason": "High transport emissions detected",
-          "generatedAt": "2024-01-15T10:30:00.000Z"
+    "tips": [
+      {
+        "id": "transport-high-percentage",
+        "title": "Reduce Transportation Emissions",
+        "message": "Transportation makes up a large portion of your carbon footprint. Consider carpooling, public transit, or cycling for shorter trips to make a meaningful impact.",
+        "category": "transport",
+        "priority": "high",
+        "estimatedSavings": {
+          "amount": 0.7,
+          "period": "day",
+          "description": "Save ~0.7 kg CO2/day"
         },
-        {
-          "id": "tip2",
-          "userId": "user123",
-          "title": "Reduce food emissions",
-          "description": "Your food activities generated 120.50 kg CO2e. Consider alternatives.",
-          "category": "food",
-          "priority": "medium",
-          "potentialSavings": 36.15,
-          "actionable": true,
-          "reason": "High food emissions detected",
-          "generatedAt": "2024-01-15T10:30:00.000Z"
-        }
-      ],
-      "generatedAt": "2024-01-15T10:30:00.000Z",
-      "viewed": false
-    }
+        "actionableSteps": [
+          "Use public transportation for your daily commute",
+          "Carpool with colleagues or neighbors",
+          "Bike or walk for trips under 3 km",
+          "Combine errands into a single trip"
+        ],
+        "matchReason": "transport accounts for 45.2% of your weekly emissions (threshold: 40%)",
+        "relevanceScore": 55,
+        "source": "EPA Transportation Emissions Data"
+      },
+      {
+        "id": "red-meat-frequent",
+        "title": "Explore Plant-Based Meals",
+        "message": "You've logged red meat several times this week. Swapping just one or two meals for plant-based options can significantly reduce your food-related emissions.",
+        "category": "food",
+        "priority": "high",
+        "estimatedSavings": {
+          "amount": 1.2,
+          "period": "day",
+          "description": "Save ~1.2 kg CO2/day"
+        },
+        "actionableSteps": [
+          "Try \"Meatless Monday\" or another meat-free day",
+          "Explore plant-based protein alternatives",
+          "Choose chicken or fish instead of beef",
+          "Experiment with vegetarian recipes"
+        ],
+        "matchReason": "You logged beef 4 times this week (threshold: 3)",
+        "relevanceScore": 70,
+        "source": "Oxford University Food Emissions Study"
+      }
+    ],
+    "period": {
+      "start": "2026-06-08T00:00:00.000Z",
+      "end": "2026-06-14T23:59:59.999Z"
+    },
+    "activityCount": 15,
+    "generatedAt": "2026-06-15T10:30:00.000Z"
+  }
+}
+```
+
+**Response Fields**:
+- `tips`: Array of personalized tip objects
+  - `id`: Unique tip rule identifier
+  - `title`: Tip headline
+  - `message`: Detailed tip message (positive, non-judgmental)
+  - `category`: Activity category (`transport`, `food`, `energy`, `shopping`, `general`)
+  - `priority`: Tip priority (`high`, `medium`, `low`)
+  - `estimatedSavings`: Estimated CO2 savings if tip is followed
+    - `amount`: Savings amount in kg CO2
+    - `period`: Time period (`day` or `week`)
+    - `description`: Human-readable savings description
+  - `actionableSteps`: Array of specific actions to take
+  - `matchReason`: Why this tip was generated for the user
+  - `relevanceScore`: Relevance score (0-100, higher = more relevant)
+  - `source`: Optional citation for the tip
+- `period`: Week date range used for evaluation
+- `activityCount`: Number of activities logged in the period
+- `generatedAt`: Timestamp when tips were generated
+
+**Tip Selection Logic**:
+- Evaluates current week's activity data (Monday-Sunday)
+- Returns 3-5 most relevant tips based on:
+  - Category percentage thresholds (e.g., transport > 40% of total)
+  - Activity frequency (e.g., beef logged 3+ times)
+  - High-impact activities
+  - Inactivity (no logs in 2+ days)
+- Falls back to general tips if fewer than 3 specific matches
+- All tips are framed positively as opportunities, not criticism
+
+**Empty State Response** (no activity data):
+```json
+{
+  "success": true,
+  "data": {
+    "tips": [
+      {
+        "id": "general-reduce-waste",
+        "title": "Reduce, Reuse, Recycle",
+        "message": "Small daily choices add up. Bringing reusable bags, bottles, and containers reduces waste and the carbon footprint of single-use items.",
+        "category": "general",
+        "priority": "low",
+        "estimatedSavings": {
+          "amount": 0.2,
+          "period": "day",
+          "description": "Save ~0.2 kg CO2/day"
+        },
+        "actionableSteps": [
+          "Carry a reusable water bottle",
+          "Use reusable shopping bags",
+          "Bring your own coffee cup",
+          "Choose products with minimal packaging"
+        ],
+        "matchReason": "General tip",
+        "relevanceScore": 30
+      }
+    ],
+    "period": {
+      "start": "2026-06-08T00:00:00.000Z",
+      "end": "2026-06-14T23:59:59.999Z"
+    },
+    "activityCount": 0,
+    "generatedAt": "2026-06-15T10:30:00.000Z"
   }
 }
 ```
 
 **Error Responses**:
 - `401 UNAUTHORIZED`: Missing or invalid token
-- `404 NOT_FOUND`: No tips available for the specified week
+- `500 INTERNAL_SERVER_ERROR`: Failed to generate tips
 
 ---
 
-### Mark Tips as Viewed
+### Preview Tip Rules (Debug)
 
-Mark a tip collection as viewed.
+Preview all available tip rules for debugging or admin purposes.
 
-**Endpoint**: `PUT /api/tips/:tipCollectionId/viewed`
+**Endpoint**: `GET /api/tips/preview`
 
 **Authentication**: Required
 
@@ -569,14 +789,25 @@ Mark a tip collection as viewed.
 ```json
 {
   "success": true,
-  "message": "Tips marked as viewed"
+  "data": {
+    "totalRules": 18,
+    "rules": [
+      {
+        "id": "transport-high-percentage",
+        "title": "Reduce Transportation Emissions",
+        "category": "transport",
+        "priority": "high",
+        "conditionType": "category_percentage",
+        "estimatedSavings": "0.7 kg CO2/day"
+      }
+    ]
+  }
 }
 ```
 
 **Error Responses**:
 - `401 UNAUTHORIZED`: Missing or invalid token
-- `403 FORBIDDEN`: User doesn't own these tips
-- `404 NOT_FOUND`: Tip collection not found
+- `500 INTERNAL_SERVER_ERROR`: Failed to fetch tip rules
 
 ---
 

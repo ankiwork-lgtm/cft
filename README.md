@@ -250,46 +250,215 @@ npm run format:check
 npm run type-check
 ```
 
-## 🚢 Deployment
+## 🚢 Production Deployment
 
-### Frontend Deployment (Firebase Hosting)
+This project includes automated CI/CD pipelines using GitHub Actions for deployment to Google Cloud Platform and Firebase, staying within Always Free tier limits.
+
+### Prerequisites for Production Deployment
+
+1. **Google Cloud Project** with billing enabled (required even for free tier)
+2. **Firebase Project** (can be the same as GCP project)
+3. **GitHub Repository** with Actions enabled
+
+### Step 1: Enable Required Google Cloud APIs
 
 ```bash
-# Build frontend
+# Authenticate with Google Cloud
+gcloud auth login
+
+# Set your project ID
+gcloud config set project YOUR_PROJECT_ID
+
+# Enable required APIs
+gcloud services enable run.googleapis.com
+gcloud services enable artifactregistry.googleapis.com
+gcloud services enable cloudbuild.googleapis.com
+gcloud services enable firebase.googleapis.com
+gcloud services enable firestore.googleapis.com
+gcloud services enable identitytoolkit.googleapis.com
+```
+
+### Step 2: Create Service Account for Deployment
+
+```bash
+# Create service account for deployment
+gcloud iam service-accounts create cft-deploy \
+    --description="Service account for CFT deployment" \
+    --display-name="CFT Deploy"
+
+# Get your project ID
+PROJECT_ID=$(gcloud config get-value project)
+
+# Grant necessary roles (minimal permissions for Always Free tier)
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cft-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/run.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cft-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/artifactregistry.admin"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cft-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/iam.serviceAccountUser"
+
+gcloud projects add-iam-policy-binding $PROJECT_ID \
+    --member="serviceAccount:cft-deploy@$PROJECT_ID.iam.gserviceaccount.com" \
+    --role="roles/storage.admin"
+
+# Create and download service account key
+gcloud iam service-accounts keys create cft-deploy-key.json \
+    --iam-account=cft-deploy@$PROJECT_ID.iam.gserviceaccount.com
+```
+
+### Step 3: Setup Firebase for Hosting
+
+```bash
+# Install Firebase CLI if not already installed
+npm install -g firebase-tools
+
+# Login to Firebase
+firebase login
+
+# Initialize Firebase in your project (if not already done)
+firebase init
+
+# Create Firebase service account for GitHub Actions
+# Go to Firebase Console > Project Settings > Service Accounts
+# Click "Generate new private key" and save as firebase-service-account.json
+```
+
+### Step 4: Configure GitHub Secrets
+
+Add the following secrets in your GitHub repository settings (`Settings > Secrets and variables > Actions`):
+
+#### Backend Deployment Secrets:
+```
+GCP_PROJECT_ID=your-gcp-project-id
+GCP_SA_KEY=<contents of cft-deploy-key.json>
+```
+
+#### Frontend Deployment Secrets:
+```
+VITE_FIREBASE_API_KEY=your_firebase_api_key
+VITE_FIREBASE_AUTH_DOMAIN=your-project-id.firebaseapp.com
+VITE_FIREBASE_PROJECT_ID=your-project-id
+VITE_FIREBASE_STORAGE_BUCKET=your-project-id.appspot.com
+VITE_FIREBASE_MESSAGING_SENDER_ID=your_sender_id
+VITE_FIREBASE_APP_ID=your_app_id
+VITE_API_URL=https://cft-backend-xxxxxxxxxx-uc.a.run.app
+FIREBASE_SERVICE_ACCOUNT=<contents of firebase-service-account.json>
+FIREBASE_PROJECT_ID=your-firebase-project-id
+```
+
+### Step 5: Deploy Firestore Rules and Indexes
+
+```bash
+# Deploy Firestore security rules
+firebase deploy --only firestore:rules
+
+# Deploy Firestore indexes
+firebase deploy --only firestore:indexes
+```
+
+### Step 6: Automated Deployment
+
+The project includes two GitHub Actions workflows:
+
+#### Backend Deployment (`/.github/workflows/backend-deploy.yml`)
+- Triggers on push to `main` branch when backend files change
+- Builds Docker image using multi-stage Dockerfile
+- Pushes to Google Artifact Registry
+- Deploys to Cloud Run with Always Free tier settings:
+  - Memory: 256Mi
+  - CPU: 1
+  - Min instances: 0 (scales to zero)
+  - Max instances: 2
+  - Region: us-central1
+
+#### Frontend Deployment (`/.github/workflows/frontend-deploy.yml`)
+- Triggers on push to `main` branch when frontend files change
+- Builds Vite application with production environment variables
+- Deploys to Firebase Hosting
+
+### Step 7: Verify Deployment
+
+After pushing to the `main` branch:
+
+1. **Check GitHub Actions**: Go to your repository's Actions tab to monitor deployments
+2. **Backend URL**: Find your Cloud Run service URL in the GitHub Actions logs or Google Cloud Console
+3. **Frontend URL**: Your Firebase Hosting URL will be `https://your-project-id.web.app`
+
+### Manual Deployment (Alternative)
+
+If you prefer manual deployment:
+
+#### Frontend Deployment (Firebase Hosting)
+
+```bash
+# Build frontend with production environment variables
 npm run build --workspace=frontend
 
 # Deploy to Firebase Hosting
 firebase deploy --only hosting
 ```
 
-### Backend Deployment (Cloud Run)
+#### Backend Deployment (Cloud Run)
 
 ```bash
 # Build Docker image
-docker build -t gcr.io/[PROJECT-ID]/cft-backend -f backend/Dockerfile .
+docker build -t us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cft-backend/cft-backend:latest -f backend/Dockerfile .
 
-# Push to Google Container Registry
-docker push gcr.io/[PROJECT-ID]/cft-backend
+# Push to Artifact Registry
+docker push us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cft-backend/cft-backend:latest
 
 # Deploy to Cloud Run
 gcloud run deploy cft-backend \
-  --image gcr.io/[PROJECT-ID]/cft-backend \
+  --image us-central1-docker.pkg.dev/YOUR_PROJECT_ID/cft-backend/cft-backend:latest \
   --platform managed \
   --region us-central1 \
   --allow-unauthenticated \
-  --set-env-vars GOOGLE_APPLICATION_CREDENTIALS=/app/serviceAccountKey.json
+  --memory 256Mi \
+  --cpu 1 \
+  --min-instances 0 \
+  --max-instances 2 \
+  --port 3000
 ```
 
-**Note**: Update `VITE_API_URL` in your frontend `.env` to point to your Cloud Run URL.
+### Always Free Tier Optimization
 
-### Environment Variables for Production
+The deployment is configured to stay within Google Cloud and Firebase Always Free tier limits:
 
-Update your production environment variables:
+#### Cloud Run Configuration:
+- **Memory**: 256Mi (well within 2GB limit)
+- **CPU**: 1 vCPU (within limit)
+- **Min instances**: 0 (scales to zero when not in use)
+- **Max instances**: 2 (prevents runaway scaling)
+- **Region**: us-central1 (Always Free eligible region)
 
-```env
-VITE_API_URL=https://your-cloud-run-url
-NODE_ENV=production
+#### Firebase Limits:
+- **Firestore**: 50K reads, 20K writes, 20K deletes per day
+- **Hosting**: 10GB storage, 360MB/day transfer
+- **Authentication**: Unlimited users
+
+### Monitoring and Alerts
+
+Set up monitoring to track usage:
+
+```bash
+# Create billing budget alert (optional but recommended)
+gcloud billing budgets create \
+  --billing-account=YOUR_BILLING_ACCOUNT_ID \
+  --display-name="CFT Free Tier Alert" \
+  --budget-amount=1USD \
+  --threshold-rule=percent=50 \
+  --threshold-rule=percent=90 \
+  --threshold-rule=percent=100
 ```
+
+Monitor usage in:
+- [Google Cloud Console](https://console.cloud.google.com/) → Billing
+- [Firebase Console](https://console.firebase.google.com/) → Usage tab
 
 ## 📊 Free Tier Limits
 

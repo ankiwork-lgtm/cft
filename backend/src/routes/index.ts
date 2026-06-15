@@ -5,6 +5,10 @@
 import { Router, Request, Response } from 'express';
 import { verifyAuth } from '../middleware/auth';
 import { initializeUser } from '../middleware/initializeUser';
+import quizRoutes from './quiz';
+import logsRoutes from './logs';
+import dashboardRoutes from './dashboard';
+import tipsRoutes from './tips';
 
 const router = Router();
 
@@ -29,151 +33,24 @@ router.get('/', (_req: Request, res: Response) => {
 // Protected routes (auth required)
 
 /**
- * POST /api/quiz
- * Submit quiz answers and calculate baseline carbon score
+ * Quiz routes
  */
-router.post('/quiz', protectedRoute, async (req: Request, res: Response) => {
-  try {
-    res.status(501).json({
-      success: false,
-      message: 'Quiz endpoint - not implemented yet',
-      data: {
-        endpoint: 'POST /api/quiz',
-        description: 'Submit quiz answers and get baseline carbon score',
-        expectedBody: {
-          answers: 'Record<string, string | number>',
-        },
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred',
-      },
-    });
-  }
-});
+router.use('/quiz', quizRoutes);
 
 /**
- * GET /api/logs
- * Get user's activity logs
+ * Activity logs routes
  */
-router.get('/logs', protectedRoute, async (req: Request, res: Response) => {
-  try {
-    res.status(501).json({
-      success: false,
-      message: 'Activity logs endpoint - not implemented yet',
-      data: {
-        endpoint: 'GET /api/logs',
-        description: 'Get user activity logs with optional filters',
-        queryParams: {
-          startDate: 'string (YYYY-MM-DD)',
-          endDate: 'string (YYYY-MM-DD)',
-          category: 'transport | food | energy | shopping',
-        },
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred',
-      },
-    });
-  }
-});
+router.use('/logs', logsRoutes);
 
 /**
- * POST /api/logs
- * Create a new activity log entry
+ * Dashboard routes
  */
-router.post('/logs', protectedRoute, async (req: Request, res: Response) => {
-  try {
-    res.status(501).json({
-      success: false,
-      message: 'Create activity log endpoint - not implemented yet',
-      data: {
-        endpoint: 'POST /api/logs',
-        description: 'Log a new activity and calculate CO2 impact',
-        expectedBody: {
-          date: 'string (ISO 8601)',
-          category: 'transport | food | energy | shopping',
-          activityType: 'string',
-          quantity: 'number',
-          unit: 'string',
-          notes: 'string (optional)',
-        },
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred',
-      },
-    });
-  }
-});
+router.use('/dashboard', dashboardRoutes);
 
 /**
- * GET /api/dashboard
- * Get dashboard data (summary, trends, breakdown)
+ * Tips routes
  */
-router.get('/dashboard', protectedRoute, async (req: Request, res: Response) => {
-  try {
-    res.status(501).json({
-      success: false,
-      message: 'Dashboard endpoint - not implemented yet',
-      data: {
-        endpoint: 'GET /api/dashboard',
-        description: 'Get dashboard data with CO2 trends and category breakdown',
-        queryParams: {
-          period: 'week | month | year',
-        },
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred',
-      },
-    });
-  }
-});
-
-/**
- * GET /api/tips
- * Get personalized tips for the user
- */
-router.get('/tips', protectedRoute, async (req: Request, res: Response) => {
-  try {
-    res.status(501).json({
-      success: false,
-      message: 'Tips endpoint - not implemented yet',
-      data: {
-        endpoint: 'GET /api/tips',
-        description: 'Get personalized tips based on user activity patterns',
-        queryParams: {
-          limit: 'number (default: 5)',
-        },
-      },
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      error: {
-        code: 'INTERNAL_SERVER_ERROR',
-        message: 'An error occurred',
-      },
-    });
-  }
-});
+router.use('/tips', tipsRoutes);
 
 export default router;
 

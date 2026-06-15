@@ -9,6 +9,9 @@ import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { SignUp } from './components/auth/SignUp';
 import { Login } from './components/auth/Login';
 import { Dashboard } from './pages/Dashboard';
+import { QuizPage } from './pages/QuizPage';
+import { LogActivity } from './pages/LogActivity';
+import { TodayView } from './pages/TodayView';
 
 function App() {
   return (
@@ -21,10 +24,34 @@ function App() {
           
           {/* Protected routes */}
           <Route
+            path="/quiz"
+            element={
+              <ProtectedRoute>
+                <QuizPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
             path="/dashboard"
             element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/log-activity"
+            element={
+              <ProtectedRoute>
+                <LogActivity />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/today"
+            element={
+              <ProtectedRoute>
+                <TodayView />
               </ProtectedRoute>
             }
           />

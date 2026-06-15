@@ -24,10 +24,15 @@ export interface ApiError {
 // Quiz API
 export interface SubmitQuizRequest {
   responses: QuizSubmission['responses'];
+  goalTarget?: number; // Optional goal percentage (5, 10, or 15)
 }
 
 export interface SubmitQuizResponse {
   result: QuizResult;
+  baselineScore: number;
+  currentScore: number;
+  footprintEstimate: number; // Annual CO2 in kg
+  nationalAverage: number; // For comparison
 }
 
 // Activity API
@@ -77,6 +82,42 @@ export interface GetScoreHistoryRequest {
 
 export interface GetScoreHistoryResponse {
   scores: CarbonScore[];
+}
+
+// Dashboard API
+export interface GetDashboardSummaryRequest {
+  range?: 'week' | 'month';
+}
+
+export interface DashboardSummary {
+  totalCO2: number;
+  categoryBreakdown: {
+    category: string;
+    co2Kg: number;
+    percentage: number;
+  }[];
+  dailyTotals: {
+    date: string;
+    total: number;
+    byCategory: Record<string, number>;
+  }[];
+  goalProgress: {
+    currentScore: number;
+    baselineScore: number;
+    percentageChange: number;
+    goalTarget?: number;
+    progressTowardGoal?: number;
+  };
+  period: {
+    range: 'week' | 'month';
+    startDate: string;
+    endDate: string;
+  };
+  hasData: boolean;
+}
+
+export interface GetDashboardSummaryResponse {
+  summary: DashboardSummary;
 }
 
 // Tips API

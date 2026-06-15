@@ -4,9 +4,9 @@
  */
 
 import { ActivityCategory } from './activity.types';
+import { TipPriority } from './tip.types';
 
 export type TipCategory = ActivityCategory | 'general';
-export type TipPriority = 'high' | 'medium' | 'low';
 
 export interface TipTriggerCondition {
   category?: TipCategory;
