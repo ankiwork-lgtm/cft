@@ -131,12 +131,6 @@ export function Dashboard() {
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
             <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">Dashboard</h1>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors"
-            >
-              Log Out
-            </button>
           </div>
 
           {/* Welcome Card */}
@@ -226,12 +220,6 @@ export function Dashboard() {
               className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-md"
             >
               📝 Log Activity
-            </button>
-            <button
-              onClick={handleLogout}
-              className="px-4 py-2 text-sm bg-neutral-200 text-neutral-700 rounded-lg hover:bg-neutral-300 transition-colors"
-            >
-              Log Out
             </button>
           </div>
         </div>
