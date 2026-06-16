@@ -61,8 +61,11 @@ export const TodayView: React.FC = () => {
         const daily = annualTarget / 365;
         setDailyTarget(parseFloat(daily.toFixed(2)));
       } catch (err: any) {
-        // 404 means the user hasn't completed the quiz yet — this is expected, no need to log an error
-        if (err?.status !== 404) {
+        // 404 = quiz not taken yet (expected)
+        // 401 = Firebase auth token not yet ready on mount (expected race condition)
+        // 0   = network error (handled separately by apiRequest)
+        const isSilentError = err?.status === 404 || err?.status === 401;
+        if (!isSilentError) {
           console.error('Failed to fetch user data:', err);
         }
         // Default to 13.7 kg CO2/day (≈ 5000 kg annual / 365 days)

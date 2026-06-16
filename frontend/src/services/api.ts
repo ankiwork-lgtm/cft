@@ -44,10 +44,22 @@ const apiRequest = async <T>(
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const response = await fetch(`${API_URL}${endpoint}`, {
-    ...options,
-    headers,
-  });
+  let response: Response;
+  try {
+    response = await fetch(`${API_URL}${endpoint}`, {
+      ...options,
+      headers,
+    });
+  } catch (networkErr: any) {
+    // Network-level failure: backend unreachable, CORS preflight blocked, etc.
+    const err = new Error(
+      `Network error — cannot reach API at ${API_URL}. ` +
+      `Check that the backend is running and CORS is configured. ` +
+      `(${networkErr?.message ?? 'Failed to fetch'})`
+    ) as Error & { status: number };
+    err.status = 0;
+    throw err;
+  }
 
   if (!response.ok) {
     // Include status code — statusText is often empty in HTTP/2 (e.g., Cloud Run)
