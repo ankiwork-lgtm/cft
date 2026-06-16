@@ -50,7 +50,21 @@ const apiRequest = async <T>(
   });
 
   if (!response.ok) {
-    throw new Error(`API request failed: ${response.statusText}`);
+    // Include status code — statusText is often empty in HTTP/2 (e.g., Cloud Run)
+    let errorMessage = `API request failed with status ${response.status}`;
+    try {
+      const errBody = await response.json();
+      if (errBody?.error?.message) {
+        errorMessage += `: ${errBody.error.message}`;
+      } else if (errBody?.message) {
+        errorMessage += `: ${errBody.message}`;
+      }
+    } catch {
+      // ignore JSON parse errors on error body
+    }
+    const err = new Error(errorMessage) as Error & { status: number };
+    err.status = response.status;
+    throw err;
   }
 
   return response.json();

@@ -50,19 +50,22 @@ export const TodayView: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.get<any>('/quiz/result');  // fixed: was /quiz/results
-        const { baselineScore, goalTarget } = response.data || {};  // fixed: was response.data?.data
-        
+        const response = await api.get<any>('/quiz/result');
+        const { baselineScore, goalTarget } = response.data || {};
+
         // Daily target = (baseline * (1 - goalPercentage/100)) / 365
-        const annualTarget = goalTarget 
+        const annualTarget = goalTarget
           ? baselineScore * (1 - goalTarget / 100)
           : baselineScore;
-        
+
         const daily = annualTarget / 365;
         setDailyTarget(parseFloat(daily.toFixed(2)));
-      } catch (err) {
-        console.error('Failed to fetch user data:', err);
-        // Default to 13.7 kg (5000 kg annual / 365 days)
+      } catch (err: any) {
+        // 404 means the user hasn't completed the quiz yet — this is expected, no need to log an error
+        if (err?.status !== 404) {
+          console.error('Failed to fetch user data:', err);
+        }
+        // Default to 13.7 kg CO2/day (≈ 5000 kg annual / 365 days)
         setDailyTarget(13.7);
       }
     };
