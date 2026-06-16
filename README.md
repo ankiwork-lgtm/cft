@@ -2,6 +2,118 @@
 
 A web application to help users track and reduce their carbon footprint through personalized insights and actionable tips.
 
+---
+
+## 🌱 Chosen Vertical
+
+**Sustainability & Environmental Impact — Personal Carbon Footprint Tracking**
+
+This project targets the **sustainability vertical**, helping everyday individuals understand and reduce their personal carbon emissions. The problem is concrete: most people have no intuitive sense of how much CO₂ their daily habits generate. This app makes that invisible footprint visible, quantified, and actionable — directly addressing one of the most pressing global challenges of our time.
+
+---
+
+## 🧠 Approach & Logic
+
+### Problem Statement
+People know they should "be more sustainable" but lack specific, personalized data about *which* of their habits matter most. Generic tips ("eat less meat", "drive less") feel abstract without knowing your own baseline.
+
+### Solution Approach
+
+1. **Baseline Assessment (Quiz)** — Users first complete a one-time onboarding quiz to establish their annual carbon baseline across four life categories: transport, food, energy, and shopping. This creates a personalised reference point.
+
+2. **Daily Activity Logging** — Users log individual activities throughout the day (e.g., "drove 20 km by car", "ate a beef burger"). Each activity is converted to a kg CO₂ equivalent using pre-defined emission factors stored in the backend.
+
+3. **Daily Target Calculation** — The system derives a *daily* CO₂ budget by combining the user's baseline score with their stated reduction goal percentage:
+   ```
+   Daily Target = (Baseline × (1 − Goal%/100)) / 365
+   ```
+   This makes the abstract annual goal tangible — shown as a simple daily bar.
+
+4. **CO₂ Translation ("Translator")** — Raw kg CO₂ numbers are meaningless to most users. The app includes a `co2Translator` utility that converts values into relatable analogies (e.g., "≈ 3 cups of coffee", "≈ 12 km by car") to build intuition.
+
+5. **Personalised Weekly Tips** — The backend analyses recent activity patterns and surfaces 3–5 targeted tips per week, ranked by impact, so users know *where to focus*.
+
+6. **Dashboard Analytics** — Interactive charts built with Recharts visualise trends over time, helping users see the effect of their behaviour changes.
+
+### Design Principles
+- **Friction-free logging**: Activity entry is designed to be fast (< 30 seconds per log).
+- **Progress over perfection**: The UI celebrates small wins and frames over-target days constructively, not punitively.
+- **Data owned by the user**: All data is stored in Firestore under authenticated user accounts; no third-party sharing.
+
+---
+
+## ⚙️ How the Solution Works
+
+### High-Level Architecture
+
+```
+User Browser
+    │
+    ▼
+Firebase Hosting          ← React/Vite SPA (frontend)
+    │ (REST API calls)
+    ▼
+Cloud Run (Node.js)       ← Express + TypeScript API (backend)
+    │
+    ▼
+Firestore (Native mode)   ← User data, activity logs, quiz results
+    │
+Firebase Auth             ← Identity / JWT token issuance
+```
+
+### Request Flow
+
+1. **Authentication** — The frontend uses Firebase Auth to sign in the user and obtains a Firebase ID token (JWT). Every API request includes this token in the `Authorization: Bearer <token>` header.
+
+2. **Backend Middleware** — The Express backend verifies the token via the Firebase Admin SDK (`verifyIdToken`). Unverified requests receive a `401`. The decoded `uid` is attached to `req.user`.
+
+3. **API Endpoints** — The backend exposes RESTful routes:
+   | Route | Purpose |
+   |---|---|
+   | `POST /quiz/submit` | Save baseline quiz result |
+   | `GET /quiz/result` | Retrieve user's quiz result & goal |
+   | `POST /logs/entries` | Log a new activity |
+   | `GET /logs/entries?date=YYYY-MM-DD` | Fetch entries for a specific day |
+   | `DELETE /logs/entries/:id` | Remove an entry |
+   | `GET /dashboard/summary` | Aggregated trend data for charts |
+   | `GET /tips` | Weekly personalised tips |
+
+4. **Emission Calculation** — When a log entry is submitted, the backend looks up the emission factor for the given `activityType` (e.g., `car-petrol` = 0.21 kg CO₂/km), multiplies by `quantity`, and stores the computed `co2Kg` value alongside the entry.
+
+5. **Frontend State** — React components consume the API via a typed `api.ts` service layer (built on the native `fetch` API). Shared TypeScript types in the `/shared` workspace ensure the request/response shapes are consistent end-to-end with no runtime surprises.
+
+6. **Daily Progress (TodayView)** — On the Today page, the frontend fetches both today's log entries (`/logs/entries?date=today`) and the user's quiz result (`/quiz/result`) in parallel. It computes progress against the personalised daily target and renders a progress bar with a CO₂ translation analogy.
+
+### Monorepo Structure
+
+| Package | Role |
+|---|---|
+| `/frontend` | React 18 + Vite + Tailwind CSS |
+| `/backend` | Node.js + Express + TypeScript |
+| `/shared` | Shared TypeScript types (used by both) |
+
+---
+
+## 📌 Assumptions Made
+
+1. **Emission factors are static** — CO₂ coefficients per activity type (e.g., kg CO₂/km for car travel) are fixed constants defined in the backend. Real-world factors vary by country, fuel mix, and vehicle age, but static global averages are used for simplicity.
+
+2. **One quiz result per user** — The system assumes each user has a single, mutable baseline/goal record. Re-taking the quiz overwrites the previous result.
+
+3. **Daily target = annual goal ÷ 365** — The app uses a uniform daily target regardless of weekends, seasons, or holidays. A more sophisticated model would apply variable daily budgets.
+
+4. **User is authenticated before any data access** — All API routes require a valid Firebase ID token. The frontend gracefully handles a 401 on mount (token not yet ready) by silently defaulting the daily target to the global average (≈ 13.7 kg CO₂/day, equivalent to ~5,000 kg/year).
+
+5. **Free tier usage only** — The architecture is explicitly designed for low-traffic personal use within Google Cloud Always Free / Firebase Spark tier limits (< 50K Firestore reads/day, Cloud Run scaling to zero). It is **not** designed for high-concurrency production workloads without additional tuning.
+
+6. **Single region deployment** — The backend is deployed in `us-central1` to qualify for Always Free Cloud Run credits. Latency from other regions is accepted as a trade-off.
+
+7. **No offline support** — The app requires an internet connection. There is no service worker or local caching layer.
+
+---
+
+
+
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.4-blue)](https://www.typescriptlang.org/)
 [![React](https://img.shields.io/badge/React-18.2-61DAFB)](https://reactjs.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-18+-339933)](https://nodejs.org/)
