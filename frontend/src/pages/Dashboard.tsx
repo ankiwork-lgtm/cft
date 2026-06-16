@@ -46,7 +46,7 @@ const CATEGORY_LABELS = {
 };
 
 export function Dashboard() {
-  const { currentUser, signOut } = useAuth();
+  const { currentUser } = useAuth();
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [quizCompleted, setQuizCompleted] = useState(false);
@@ -98,14 +98,7 @@ export function Dashboard() {
     }
   }, [selectedRange, quizCompleted]);
 
-  async function handleLogout() {
-    try {
-      await signOut();
-      navigate('/login');
-    } catch (error) {
-      console.error('Failed to log out:', error);
-    }
-  }
+
 
   if (loading) {
     return <LoadingSpinner fullScreen message="Loading your dashboard..." />;
