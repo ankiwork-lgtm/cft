@@ -78,6 +78,7 @@ export function SignUp() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             required
+            autoComplete="email"
             style={{
               width: '100%',
               padding: '8px',
@@ -98,6 +99,7 @@ export function SignUp() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
+            autoComplete="new-password"
             style={{
               width: '100%',
               padding: '8px',
@@ -118,6 +120,7 @@ export function SignUp() {
             value={confirmPassword}
             onChange={(e) => setConfirmPassword(e.target.value)}
             required
+            autoComplete="new-password"
             style={{
               width: '100%',
               padding: '8px',

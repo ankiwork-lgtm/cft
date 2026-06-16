@@ -97,14 +97,22 @@ export const EarthHealthMeter: React.FC<EarthHealthMeterProps> = ({
         </div>
       )}
 
-      {/* Meter Bar */}
-      <div className={`w-full bg-neutral-200 rounded-full ${config.height} overflow-hidden relative`}>
+      {/* Meter Bar — Issue 3: role=progressbar + ARIA */}
+      <div
+        role="progressbar"
+        aria-valuenow={normalizedScore}
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-label={`Earth Health Score: ${normalizedScore} out of 100 — ${getScoreLabel(normalizedScore)}`}
+        className={`w-full bg-neutral-200 rounded-full ${config.height} overflow-hidden relative`}
+      >
         <div
           className={`${config.height} rounded-full transition-all duration-700 ease-out`}
           style={{
             width: `${normalizedScore}%`,
             background: getGradient(normalizedScore),
           }}
+          aria-hidden="true"
         />
         
         {/* Baseline marker if provided */}
@@ -112,9 +120,10 @@ export const EarthHealthMeter: React.FC<EarthHealthMeterProps> = ({
           <div
             className="absolute top-0 bottom-0 w-0.5 bg-neutral-400"
             style={{ left: `${Math.min(100, Math.max(0, baselineScore))}%` }}
+            aria-hidden="true"
             title={`Baseline: ${baselineScore}`}
           >
-            <div className="absolute -top-1 -left-1 w-2 h-2 bg-neutral-400 rounded-full" />
+            <div className="absolute -top-1 -left-1 w-2 h-2 bg-neutral-400 rounded-full" aria-hidden="true" />
           </div>
         )}
       </div>

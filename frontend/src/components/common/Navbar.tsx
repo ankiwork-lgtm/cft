@@ -3,7 +3,7 @@
  * Persistent top navigation bar showing the application name
  */
 
-import { useNavigate, useLocation } from 'react-router-dom';
+import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface NavLink {
@@ -19,14 +19,14 @@ const NAV_LINKS: NavLink[] = [
 ];
 
 export function Navbar() {
-  const navigate = useNavigate();
   const location = useLocation();
   const { currentUser, signOut } = useAuth();
 
   const handleLogout = async () => {
     try {
       await signOut();
-      navigate('/login');
+      // Navigate via Link below; redirect handled by ProtectedRoute after sign-out
+      window.location.href = '/login';
     } catch (err) {
       console.error('Logout failed:', err);
     }
@@ -37,38 +37,40 @@ export function Navbar() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-14 sm:h-16">
 
-          {/* Brand */}
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="flex items-center gap-2 group focus:outline-none"
+          {/* Brand — Issue 1: use <Link>, Issue 2: aria-label, fix focus:outline-none */}
+          <Link
+            to="/dashboard"
+            aria-label="Carbon Footprint Tracker — go to dashboard"
+            className="flex items-center gap-2 group rounded focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-2 focus:ring-offset-green-700"
           >
-            <span className="text-2xl drop-shadow select-none">🌿</span>
+            <span className="text-2xl drop-shadow select-none" aria-hidden="true">🌿</span>
             <span className="text-white font-bold text-base sm:text-lg leading-tight tracking-tight group-hover:opacity-90 transition-opacity">
               Ankit's Carbon Footprint Tracker
             </span>
-          </button>
+          </Link>
 
-          {/* Nav links — hidden on mobile */}
+          {/* Nav links — hidden on mobile — Issue 1: use <Link>, Issue 2: aria-current */}
           {currentUser && (
-            <div className="hidden md:flex items-center gap-1">
+            <nav aria-label="Main navigation" className="hidden md:flex items-center gap-1">
               {NAV_LINKS.map((link) => {
                 const isActive = location.pathname === link.path;
                 return (
-                  <button
+                  <Link
                     key={link.path}
-                    onClick={() => navigate(link.path)}
-                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                    to={link.path}
+                    aria-current={isActive ? 'page' : undefined}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-1 focus:ring-offset-green-700 ${
                       isActive
                         ? 'bg-white/20 text-white shadow-inner'
                         : 'text-white/80 hover:bg-white/10 hover:text-white'
                     }`}
                   >
-                    <span>{link.icon}</span>
+                    <span aria-hidden="true">{link.icon}</span>
                     <span>{link.label}</span>
-                  </button>
+                  </Link>
                 );
               })}
-            </div>
+            </nav>
           )}
 
           {/* Right side */}
@@ -79,7 +81,7 @@ export function Navbar() {
               </span>
               <button
                 onClick={handleLogout}
-                className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 transition-all font-medium border border-white/20"
+                className="text-xs sm:text-sm px-3 py-1.5 rounded-lg bg-white/15 text-white hover:bg-white/25 transition-all font-medium border border-white/20 focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-1 focus:ring-offset-green-700"
               >
                 Log Out
               </button>
@@ -87,27 +89,28 @@ export function Navbar() {
           )}
         </div>
 
-        {/* Mobile nav links */}
+        {/* Mobile nav links — Issue 1: use <Link>, Issue 2: aria-current */}
         {currentUser && (
-          <div className="md:hidden flex gap-1 pb-2 overflow-x-auto">
+          <nav aria-label="Mobile navigation" className="md:hidden flex gap-1 pb-2 overflow-x-auto">
             {NAV_LINKS.map((link) => {
               const isActive = location.pathname === link.path;
               return (
-                <button
+                <Link
                   key={link.path}
-                  onClick={() => navigate(link.path)}
-                  className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
+                  to={link.path}
+                  aria-current={isActive ? 'page' : undefined}
+                  className={`flex-shrink-0 flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-all focus:outline-none focus:ring-2 focus:ring-white focus:ring-offset-1 focus:ring-offset-green-700 ${
                     isActive
                       ? 'bg-white/20 text-white'
                       : 'text-white/75 hover:bg-white/10 hover:text-white'
                   }`}
                 >
-                  <span>{link.icon}</span>
+                  <span aria-hidden="true">{link.icon}</span>
                   <span>{link.label}</span>
-                </button>
+                </Link>
               );
             })}
-          </div>
+          </nav>
         )}
       </div>
     </nav>

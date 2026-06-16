@@ -5,13 +5,14 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { ActivityCategory, ActivityLogEntry } from '@cft/shared';
 import { useAuth } from '../contexts/AuthContext';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
 import { ErrorMessage } from '../components/common/ErrorMessage';
 import { EmptyState } from '../components/common/EmptyState';
+import { ConfirmDialog } from '../components/common/ConfirmDialog';
 import { getPrimaryComparison } from '../utils/co2Translator';
 
 interface DayData {
@@ -38,13 +39,16 @@ const CATEGORY_DISPLAY: Record<ActivityCategory, CategoryDisplay> = {
 };
 
 export const TodayView: React.FC = () => {
-  const navigate = useNavigate();
   const { currentUser } = useAuth();
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [dailyTarget, setDailyTarget] = useState<number>(0);
+  // Issue 5: state for accessible ConfirmDialog (replaces window.confirm)
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null);
+  const [pendingDeleteLabel, setPendingDeleteLabel] = useState<string>('');
 
   // Calculate daily target from user's baseline and goal
   useEffect(() => {
@@ -97,22 +101,35 @@ export const TodayView: React.FC = () => {
     fetchTodayData();
   }, []);
 
-  const handleDelete = async (entryId: string) => {
-    if (!confirm('Are you sure you want to delete this entry?')) {
-      return;
-    }
+  // Issue 5: open ConfirmDialog instead of calling window.confirm()
+  const handleDelete = (entryId: string, activityLabel: string) => {
+    setPendingDeleteId(entryId);
+    setPendingDeleteLabel(activityLabel);
+    setConfirmOpen(true);
+  };
 
-    setDeletingId(entryId);
+  const executeDelete = async () => {
+    if (!pendingDeleteId) return;
+    setConfirmOpen(false);
+    setDeletingId(pendingDeleteId);
 
     try {
-      await api.delete(`/logs/entries/${entryId}`);
+      await api.delete(`/logs/entries/${pendingDeleteId}`);
       // Refresh data
       await fetchTodayData();
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to delete entry');
     } finally {
       setDeletingId(null);
+      setPendingDeleteId(null);
+      setPendingDeleteLabel('');
     }
+  };
+
+  const cancelDelete = () => {
+    setConfirmOpen(false);
+    setPendingDeleteId(null);
+    setPendingDeleteLabel('');
   };
 
   const getProgressColor = (current: number, target: number): string => {
@@ -136,16 +153,18 @@ export const TodayView: React.FC = () => {
   const totalComparison = getPrimaryComparison(totalCO2);
 
   return (
+    <>
     <div className="min-h-screen bg-gradient-to-br from-primary-50 to-blue-50 py-8 px-4">
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="text-primary-600 hover:text-primary-700 mb-4 flex items-center font-medium transition-colors"
+          {/* Issue 1: use <Link> instead of <button onClick(navigate)> */}
+          <Link
+            to="/dashboard"
+            className="text-primary-600 hover:text-primary-700 mb-4 flex items-center font-medium transition-colors focus:outline-none focus:underline"
           >
             ← Back to Dashboard
-          </button>
+          </Link>
           <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">Today's Activities</h1>
           <p className="text-neutral-600 mt-2">
             {new Date().toLocaleDateString('en-US', { 
@@ -168,12 +187,12 @@ export const TodayView: React.FC = () => {
         <div className="bg-white rounded-2xl shadow-soft p-6 sm:p-8 mb-6 border border-neutral-200">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-6">
             <h2 className="text-xl font-semibold text-neutral-900">Daily Progress</h2>
-            <button
-              onClick={() => navigate('/log-activity')}
-              className="bg-primary-600 text-white px-6 py-3 rounded-xl hover:bg-primary-700 transition-all transform hover:scale-105 font-medium shadow-md"
+            <Link
+              to="/log-activity"
+              className="bg-primary-600 text-white px-6 py-3 rounded-xl hover:bg-primary-700 transition-all transform hover:scale-105 font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
               + Log Activity
-            </button>
+            </Link>
           </div>
 
           <div className="space-y-6">
@@ -203,7 +222,15 @@ export const TodayView: React.FC = () => {
                   }
                 </span>
               </div>
-              <div className="w-full bg-neutral-200 rounded-full h-4 overflow-hidden">
+              {/* Issue 3: add role=progressbar + ARIA values */}
+              <div
+                role="progressbar"
+                aria-valuenow={progressPercentage}
+                aria-valuemin={0}
+                aria-valuemax={100}
+                aria-label={`Daily CO₂ progress: ${progressPercentage.toFixed(0)}% of target`}
+                className="w-full bg-neutral-200 rounded-full h-4 overflow-hidden"
+              >
                 <div
                   className={`h-full transition-all duration-500 ${
                     progressColor === 'primary' ? 'bg-gradient-to-r from-primary-500 to-primary-600' :
@@ -211,7 +238,8 @@ export const TodayView: React.FC = () => {
                     'bg-gradient-to-r from-amber-400 to-amber-500'
                   }`}
                   style={{ width: `${progressPercentage}%` }}
-                ></div>
+                  aria-hidden="true"
+                />
               </div>
             </div>
 
@@ -284,13 +312,15 @@ export const TodayView: React.FC = () => {
                                 {comparison.icon} ≈ {comparison.value} {comparison.description}
                               </div>
                             </div>
+                            {/* Issue 2: aria-label + Issue 5: opens ConfirmDialog instead of window.confirm */}
                             <button
-                              onClick={() => handleDelete(entry.id)}
+                              onClick={() => handleDelete(entry.id, entry.activityType.replace(/-/g, ' '))}
                               disabled={deletingId === entry.id}
-                              className="text-amber-600 hover:text-amber-700 disabled:opacity-50 disabled:cursor-not-allowed p-2 transition-colors"
-                              title="Delete entry"
+                              aria-label={`Delete ${entry.activityType.replace(/-/g, ' ')} entry`}
+                              aria-busy={deletingId === entry.id}
+                              className="text-amber-600 hover:text-amber-700 disabled:opacity-50 disabled:cursor-not-allowed p-2 transition-colors focus:outline-none focus:ring-2 focus:ring-amber-500 rounded"
                             >
-                              {deletingId === entry.id ? '...' : '🗑️'}
+                              <span aria-hidden="true">{deletingId === entry.id ? '...' : '🗑️'}</span>
                             </button>
                           </div>
                         </div>
@@ -308,12 +338,25 @@ export const TodayView: React.FC = () => {
               title="No activities logged today"
               description="Start tracking your carbon footprint by logging your first activity"
               actionLabel="Log Your First Activity"
-              onAction={() => navigate('/log-activity')}
+              onAction={() => { window.location.href = '/log-activity'; }}
             />
           </div>
         )}
       </div>
     </div>
+
+    {/* Issue 5: Accessible ConfirmDialog replaces window.confirm() */}
+    <ConfirmDialog
+      isOpen={confirmOpen}
+      title="Delete Activity"
+      message={`Are you sure you want to delete the "${pendingDeleteLabel}" entry? This cannot be undone.`}
+      confirmLabel="Delete"
+      cancelLabel="Keep it"
+      isDestructive
+      onConfirm={executeDelete}
+      onCancel={cancelDelete}
+    />
+    </>
   );
 };
 

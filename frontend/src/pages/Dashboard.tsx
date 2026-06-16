@@ -6,7 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import {
   LineChart,
   Line,
@@ -208,12 +208,13 @@ export function Dashboard() {
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">Dashboard</h1>
           <div className="flex flex-wrap gap-3">
-            <button
-              onClick={() => navigate('/log-activity')}
-              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-md"
+            {/* Issue 1: use <Link> instead of <button onClick(navigate)> */}
+            <Link
+              to="/log-activity"
+              className="px-4 py-2 bg-primary-600 text-white rounded-lg hover:bg-primary-700 transition-colors font-medium shadow-md focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2"
             >
-              📝 Log Activity
-            </button>
+              <span aria-hidden="true">📝</span> Log Activity
+            </Link>
           </div>
         </div>
 
@@ -260,10 +261,19 @@ export function Dashboard() {
                 {goalProgress.progressTowardGoal.toFixed(1)}% achieved
               </span>
             </div>
-            <div className="w-full bg-neutral-200 rounded-full h-4 overflow-hidden">
+            {/* Issue 3: role=progressbar + ARIA values */}
+            <div
+              role="progressbar"
+              aria-valuenow={Math.min(100, goalProgress.progressTowardGoal)}
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-label={`Goal progress: ${goalProgress.progressTowardGoal.toFixed(1)}% of ${goalProgress.goalTarget}% reduction target achieved`}
+              className="w-full bg-neutral-200 rounded-full h-4 overflow-hidden"
+            >
               <div
                 className="bg-gradient-to-r from-primary-500 to-primary-600 h-4 rounded-full transition-all duration-500"
                 style={{ width: `${Math.min(100, goalProgress.progressTowardGoal)}%` }}
+                aria-hidden="true"
               />
             </div>
           </div>

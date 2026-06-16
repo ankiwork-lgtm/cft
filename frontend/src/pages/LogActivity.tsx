@@ -4,7 +4,7 @@
  */
 
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { api } from '../services/api';
 import { ActivityCategory } from '@cft/shared';
 import { LoadingSpinner } from '../components/common/LoadingSpinner';
@@ -75,7 +75,6 @@ const ACTIVITY_CATEGORIES: Record<ActivityCategory, CategoryConfig> = {
 };
 
 export const LogActivity: React.FC = () => {
-  const navigate = useNavigate();
   const [selectedCategory, setSelectedCategory] = useState<ActivityCategory | null>(null);
   const [selectedActivity, setSelectedActivity] = useState<ActivityOption | null>(null);
   const [quantity, setQuantity] = useState<number>(0);
@@ -165,12 +164,13 @@ export const LogActivity: React.FC = () => {
       <div className="max-w-4xl mx-auto">
         {/* Header */}
         <div className="mb-8">
-          <button
-            onClick={() => navigate('/dashboard')}
-            className="text-primary-600 hover:text-primary-700 mb-4 flex items-center font-medium transition-colors"
+          {/* Issue 1: use <Link> instead of <button onClick(navigate)> */}
+          <Link
+            to="/dashboard"
+            className="text-primary-600 hover:text-primary-700 mb-4 flex items-center font-medium transition-colors focus:outline-none focus:underline"
           >
             ← Back to Dashboard
-          </button>
+          </Link>
           <h1 className="text-3xl sm:text-4xl font-bold text-neutral-900">Log Activity</h1>
           <p className="text-neutral-600 mt-2">Quick and easy tracking of your daily activities</p>
         </div>
@@ -340,12 +340,13 @@ export const LogActivity: React.FC = () => {
 
         {/* View Today's Logs Button */}
         <div className="mt-6 text-center">
-          <button
-            onClick={() => navigate('/today')}
-            className="text-primary-600 hover:text-primary-700 font-medium transition-colors"
+          {/* Issue 1: use <Link> instead of <button onClick(navigate)> */}
+          <Link
+            to="/today"
+            className="text-primary-600 hover:text-primary-700 font-medium transition-colors focus:outline-none focus:underline"
           >
             View Today's Activities →
-          </button>
+          </Link>
         </div>
       </div>
     </div>
