@@ -6,6 +6,7 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../config/firebase';
 import { verifyAuth } from '../middleware/auth';
+import { initializeUser } from '../middleware/initializeUser';
 import {
   SubmitQuizRequest,
   SubmitQuizResponse,
@@ -32,6 +33,7 @@ const router = Router();
 router.post(
   '/',
   verifyAuth,
+  initializeUser,
   async (req: Request, res: Response): Promise<void> => {
     try {
       const userId = req.user!.uid;
@@ -84,8 +86,8 @@ router.post(
         userUpdate.goalTarget = goalTarget;
       }
 
-      // Update user document
-      await db.collection('users').doc(userId).update(userUpdate);
+      // Update user document (use set+merge so it works even if doc was just created)
+      await db.collection('users').doc(userId).set(userUpdate, { merge: true });
 
       // Also save quiz response to separate collection for analytics
       await db.collection('quizResponses').add({

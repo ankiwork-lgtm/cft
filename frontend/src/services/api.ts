@@ -9,16 +9,21 @@ import {
   SubmitQuizResponse,
   DashboardSummary
 } from '@cft/shared';
+import { auth } from '../config/firebase';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
 /**
- * Get authentication token from Firebase
+ * Get authentication token from Firebase Auth
  */
 const getAuthToken = async (): Promise<string | null> => {
-  // TODO: Implement actual token retrieval from Firebase Auth
-  // This is a placeholder
-  return null;
+  const user = auth.currentUser;
+  if (!user) return null;
+  try {
+    return await user.getIdToken();
+  } catch {
+    return null;
+  }
 };
 
 /**

@@ -7,6 +7,7 @@ import quizRoutes from './quiz';
 import logsRoutes from './logs';
 import dashboardRoutes from './dashboard';
 import tipsRoutes from './tips';
+import userRoutes from './user';
 
 const router = Router();
 
@@ -46,6 +47,11 @@ router.use('/dashboard', dashboardRoutes);
  * Tips routes
  */
 router.use('/tips', tipsRoutes);
+
+/**
+ * User profile routes
+ */
+router.use('/user', userRoutes);
 
 export default router;
 

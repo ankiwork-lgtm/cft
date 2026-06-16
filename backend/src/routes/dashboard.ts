@@ -195,10 +195,10 @@ router.get('/summary', protectedRoute, async (req: Request, res: Response) => {
     }
 
     // Update user's current score in database
-    await db.collection('users').doc(userId).update({
+    await db.collection('users').doc(userId).set({
       currentScore,
       lastScoreUpdate: new Date(),
-    });
+    }, { merge: true });
 
     // Calculate percentage change from baseline
     const percentageChange = baselineScore > 0

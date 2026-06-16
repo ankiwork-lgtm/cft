@@ -3,15 +3,17 @@
  * Express server for Carbon Footprint Tracker
  */
 
+import dotenv from 'dotenv';
+import path from 'path';
+
+// Load .env FIRST before any other imports that depend on env vars (e.g. firebase config)
+dotenv.config({ path: path.resolve(__dirname, '../../backend/.env') });
+
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
-import dotenv from 'dotenv';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
-
-// Load environment variables
-dotenv.config();
 
 /**
  * Validate required environment variables

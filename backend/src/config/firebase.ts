@@ -12,28 +12,38 @@
 
 import admin from 'firebase-admin';
 
+import path from 'path';
+
+// Absolute path to the service account key at the project root (3 levels up from src/config/)
+const SERVICE_ACCOUNT_PATH = path.resolve(__dirname, '../../../serviceAccountKey.json');
+
 // Initialize Firebase Admin SDK
 if (!admin.apps.length) {
   const isCloudRun = process.env.K_SERVICE !== undefined; // Cloud Run sets K_SERVICE
 
   if (isCloudRun) {
-    // Cloud Run: Use default service account
+    // Cloud Run: Use default service account (metadata server available)
     console.log('🔧 Initializing Firebase Admin with Cloud Run default credentials');
     admin.initializeApp({
       credential: admin.credential.applicationDefault(),
     });
-  } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
-    // Local dev: Use service account key file
-    console.log('🔧 Initializing Firebase Admin with service account key');
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
   } else {
-    // Fallback: Try application default credentials
-    console.log('🔧 Initializing Firebase Admin with application default credentials');
-    admin.initializeApp({
-      credential: admin.credential.applicationDefault(),
-    });
+    // Local dev: Load service account key JSON directly
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      const serviceAccount = require(SERVICE_ACCOUNT_PATH);
+      console.log('🔧 Initializing Firebase Admin with service account key file');
+      admin.initializeApp({
+        credential: admin.credential.cert(serviceAccount),
+      });
+    } catch {
+      console.warn(`⚠️  Could not load service account key from ${SERVICE_ACCOUNT_PATH}`);
+      console.warn('   Falling back to application default credentials');
+      console.log('🔧 Initializing Firebase Admin with application default credentials');
+      admin.initializeApp({
+        credential: admin.credential.applicationDefault(),
+      });
+    }
   }
 
   console.log('✅ Firebase Admin SDK initialized successfully');

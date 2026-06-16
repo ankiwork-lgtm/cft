@@ -7,8 +7,6 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
-import { db } from '../config/firebase';
-import { doc, getDoc } from 'firebase/firestore';
 import {
   LineChart,
   Line,
@@ -61,18 +59,16 @@ export function Dashboard() {
       if (!currentUser) return;
 
       try {
-        const userDoc = await getDoc(doc(db, 'users', currentUser.uid));
-        const userData = userDoc.data();
-
-        if (userData && !userData.quizCompleted) {
-          navigate('/quiz');
-        } else {
+        // Fetch quiz status from backend (avoids direct Firestore dependency in browser)
+        const response = await api.get<{ quizCompleted: boolean }>('/user/profile');
+        if (response.success && response.data?.quizCompleted) {
           setQuizCompleted(true);
-          await loadDashboardData();
+        } else {
+          navigate('/quiz');
         }
       } catch (error) {
         console.error('Error checking quiz status:', error);
-        setError('Failed to load user data');
+        setError('Failed to connect. Please check your network and try again.');
       } finally {
         setLoading(false);
       }
