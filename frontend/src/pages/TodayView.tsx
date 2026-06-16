@@ -50,8 +50,8 @@ export const TodayView: React.FC = () => {
   useEffect(() => {
     const fetchUserData = async () => {
       try {
-        const response = await api.get<any>('/quiz/results');
-        const { baselineScore, goalTarget } = response.data?.data || {};
+        const response = await api.get<any>('/quiz/result');  // fixed: was /quiz/results
+        const { baselineScore, goalTarget } = response.data || {};  // fixed: was response.data?.data
         
         // Daily target = (baseline * (1 - goalPercentage/100)) / 365
         const annualTarget = goalTarget 
@@ -79,7 +79,7 @@ export const TodayView: React.FC = () => {
     try {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const response = await api.get<any>(`/logs/entries?date=${today}`);
-      setDayData(response.data?.data);
+      setDayData(response.data);  // apiRequest already unwraps JSON: response = { success, data }
     } catch (err: any) {
       setError(err.response?.data?.error?.message || 'Failed to load today\'s activities');
     } finally {

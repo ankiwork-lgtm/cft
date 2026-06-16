@@ -14,6 +14,7 @@ import cors from 'cors';
 import helmet from 'helmet';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
+import { requestLogger, logError } from './middleware/logger';
 
 /**
  * Validate required environment variables
@@ -83,6 +84,7 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Middleware
+app.use(requestLogger); // HTTP request/response logger (first!)
 app.use(helmet()); // Security headers
 app.use(cors()); // Enable CORS
 app.use(express.json()); // Parse JSON bodies
@@ -100,10 +102,25 @@ app.use('/api', routes);
 app.use(errorHandler);
 
 // Start server
-app.listen(PORT, () => {
+const server = app.listen(PORT, () => {
   console.log(`🚀 Server running on port ${PORT}`);
   console.log(`📊 Environment: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+});
+
+// Handle port-in-use errors gracefully instead of crashing
+server.on('error', (err: NodeJS.ErrnoException) => {
+  if (err.code === 'EADDRINUSE') {
+    logError(
+      'Server',
+      `Port ${PORT} is already in use. Kill the existing process first:`,
+    );
+    console.error(`  Run: netstat -ano | findstr :${PORT}`);
+    console.error(`  Then: taskkill /PID <PID> /F`);
+  } else {
+    logError('Server', 'Failed to start server', err);
+  }
+  process.exit(1);
 });
 
 export default app;

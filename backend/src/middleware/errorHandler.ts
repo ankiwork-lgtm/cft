@@ -4,17 +4,18 @@
 
 import { Request, Response, NextFunction } from 'express';
 import { ApiError } from '@cft/shared';
+import { logError } from './logger';
 
 /**
  * Global error handler middleware
  */
 export const errorHandler = (
   err: Error,
-  _req: Request,
+  req: Request,
   res: Response,
   _next: NextFunction
 ) => {
-  console.error('Error:', err);
+  logError('ErrorHandler', `Unhandled error on ${req.method} ${req.path}`, err);
 
   // Default error response
   const error: ApiError = {
