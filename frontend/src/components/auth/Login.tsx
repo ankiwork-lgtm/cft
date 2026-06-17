@@ -47,14 +47,19 @@ export function Login() {
       <h2>Log In</h2>
       
       {error && (
-        <div style={{ 
-          padding: '10px', 
-          marginBottom: '15px', 
-          backgroundColor: '#fee', 
-          border: '1px solid #fcc',
-          borderRadius: '4px',
-          color: '#c00'
-        }}>
+        <div
+          role="alert"
+          aria-live="assertive"
+          aria-atomic="true"
+          style={{ 
+            padding: '10px', 
+            marginBottom: '15px', 
+            backgroundColor: '#fee', 
+            border: '1px solid #fcc',
+            borderRadius: '4px',
+            color: '#c00'
+          }}
+        >
           {error}
         </div>
       )}

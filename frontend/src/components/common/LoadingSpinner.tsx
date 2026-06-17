@@ -23,12 +23,18 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   };
 
   const spinner = (
-    <div className="flex flex-col items-center justify-center gap-4">
+    <div
+      className="flex flex-col items-center justify-center gap-4"
+      role="status"
+      aria-live="polite"
+      aria-label={message || 'Loading'}
+    >
       <div
         className={`animate-spin rounded-full border-primary-600 border-t-transparent ${sizeClasses[size]}`}
+        aria-hidden="true"
       />
       {message && (
-        <p className="text-neutral-600 text-center animate-pulse">{message}</p>
+        <p className="text-neutral-600 text-center animate-pulse" aria-hidden="true">{message}</p>
       )}
     </div>
   );

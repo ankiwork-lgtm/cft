@@ -177,9 +177,14 @@ export const LogActivity: React.FC = () => {
 
         {/* Success Message */}
         {success && (
-          <div className="mb-6 p-4 bg-primary-50 border-2 border-primary-200 rounded-xl animate-pulse">
+          <div
+            role="status"
+            aria-live="polite"
+            aria-atomic="true"
+            className="mb-6 p-4 bg-primary-50 border-2 border-primary-200 rounded-xl animate-pulse"
+          >
             <p className="text-primary-800 font-medium flex items-center gap-2">
-              <span className="text-2xl">✓</span>
+              <span className="text-2xl" aria-hidden="true">✓</span>
               <span>Activity logged successfully! Great job! 🎉</span>
             </p>
           </div>

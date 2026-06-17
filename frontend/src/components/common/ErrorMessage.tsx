@@ -17,7 +17,12 @@ export const ErrorMessage: React.FC<ErrorMessageProps> = ({
   className = '',
 }) => {
   return (
-    <div className={`bg-amber-50 border-2 border-amber-200 rounded-xl p-6 ${className}`}>
+    <div
+      role="alert"
+      aria-live="assertive"
+      aria-atomic="true"
+      className={`bg-amber-50 border-2 border-amber-200 rounded-xl p-6 ${className}`}
+    >
       <div className="flex items-start gap-4">
         <div className="text-3xl flex-shrink-0">💭</div>
         <div className="flex-1">
