@@ -81,6 +81,12 @@ function validateEnvironment(): void {
 // Validate environment before starting server
 validateEnvironment();
 
+// ── Rate Limit Configuration ───────────────────────────────────────────────
+const API_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
+const API_RATE_LIMIT_MAX = 100; // max requests per window per IP
+const WRITE_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
+const WRITE_RATE_LIMIT_MAX = 20; // max writes per minute per IP
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -91,6 +97,11 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http:
   .map((o) => o.trim())
   .filter(Boolean);
 
+// Validate that allowedOrigins is not empty
+if (allowedOrigins.length === 0) {
+  console.warn('CORS_ORIGINS is empty or misconfigured. All origins will be rejected (except requests with no origin header).');
+}
+
 // Middleware
 app.use(requestLogger); // HTTP request/response logger (first!)
 app.use(helmet()); // Security headers
@@ -100,7 +111,7 @@ app.use(
       // Allow requests with no origin (e.g. curl, Postman, server-to-server)
       if (!origin) return callback(null, true);
       if (allowedOrigins.includes(origin)) return callback(null, true);
-      callback(new Error(`CORS: origin '${origin}' is not allowed`));
+      callback(null, false);
     },
     credentials: true,
   })
@@ -111,17 +122,21 @@ app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 // ── Rate Limiting ───────────────────────────────────────────────────────────
 // General limiter: applied to all /api routes
 const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,                  // max 100 requests per window per IP
+  windowMs: API_RATE_LIMIT_WINDOW_MS,
+  max: API_RATE_LIMIT_MAX,
   standardHeaders: 'draft-7', // use RateLimit-* headers (RFC 9110)
   legacyHeaders: false,
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests. Please try again later.' } },
+  skip: (req) => {
+    // Skip general limiter for write endpoints (they have their own stricter limiter)
+    return req.path.startsWith('/logs/entries') || req.path.startsWith('/quiz');
+  }
 });
 
 // Stricter limiter for write operations (log entries + quiz submissions)
 const writeLimiter = rateLimit({
-  windowMs: 60 * 1000, // 1 minute
-  max: 20,             // max 20 writes per minute per IP
+  windowMs: WRITE_RATE_LIMIT_WINDOW_MS,
+  max: WRITE_RATE_LIMIT_MAX,
   standardHeaders: 'draft-7',
   legacyHeaders: false,
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many write requests. Please slow down.' } },
@@ -132,7 +147,7 @@ app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
-// Apply general rate limit to all API routes
+// Apply general rate limit to all API routes (excluding write endpoints to avoid double limiting)
 app.use('/api', apiLimiter);
 
 // Apply stricter limits to write endpoints
