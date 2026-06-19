@@ -86,6 +86,7 @@ const API_RATE_LIMIT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes
 const API_RATE_LIMIT_MAX = 100; // max requests per window per IP
 const WRITE_RATE_LIMIT_WINDOW_MS = 60 * 1000; // 1 minute
 const WRITE_RATE_LIMIT_MAX = 20; // max writes per minute per IP
+const WRITE_ENDPOINTS = ['/logs/entries', '/quiz']; // endpoints with stricter rate limiting
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -99,7 +100,12 @@ const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http:
 
 // Validate that allowedOrigins is not empty
 if (allowedOrigins.length === 0) {
-  console.warn('CORS_ORIGINS is empty or misconfigured. All origins will be rejected (except requests with no origin header).');
+  if (process.env.NODE_ENV === 'production') {
+    console.error('CORS_ORIGINS is empty in production. This is a security risk.');
+    process.exit(1);
+  }
+  console.warn('CORS_ORIGINS is empty. Using localhost defaults for development.');
+  allowedOrigins.push('http://localhost:5173', 'http://localhost:4173');
 }
 
 // Middleware
@@ -129,7 +135,9 @@ const apiLimiter = rateLimit({
   message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests. Please try again later.' } },
   skip: (req) => {
     // Skip general limiter for write endpoints (they have their own stricter limiter)
-    return req.path.startsWith('/logs/entries') || req.path.startsWith('/quiz');
+    const isWriteEndpoint = WRITE_ENDPOINTS.some(endpoint => req.path.startsWith(endpoint));
+    const isWriteMethod = ['POST', 'PUT', 'PATCH', 'DELETE'].includes(req.method);
+    return isWriteEndpoint && isWriteMethod;
   }
 });
 

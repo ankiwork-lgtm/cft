@@ -20,22 +20,22 @@ steps:
 
   # Deploy to Cloud Run using the built image
   - name: 'gcr.io/google.com/cloudsdktool/cloud-sdk'
-    entrypoint: gcloud
+    entrypoint: bash
     args:
-      - 'run'
-      - 'deploy'
-      - 'cft-backend'
-      - '--image=us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/cft-backend:$BUILD_ID'
-      - '--region=us-central1'
-      - '--platform=managed'
-      - '--allow-unauthenticated'
-      - '--port=8080'
-      - '--timeout=120'
-      - '--cpu=1'
-      - '--memory=512Mi'
-      - '--min-instances=0'
-      - '--max-instances=10'
-      - '--set-env-vars=NODE_ENV=production,FIREBASE_PROJECT_ID=$PROJECT_ID,CORS_ORIGINS=https://$PROJECT_ID.web.app,https://$PROJECT_ID.firebaseapp.com'
+      - '-c'
+      - |
+        gcloud run deploy cft-backend \
+          --image="us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/cft-backend:$BUILD_ID" \
+          --region=us-central1 \
+          --platform=managed \
+          --allow-unauthenticated \
+          --port=8080 \
+          --timeout=120 \
+          --cpu=1 \
+          --memory=512Mi \
+          --min-instances=0 \
+          --max-instances=10 \
+          --set-env-vars "^#^NODE_ENV=production#FIREBASE_PROJECT_ID=$PROJECT_ID#CORS_ORIGINS=https://$PROJECT_ID.web.app,https://$PROJECT_ID.firebaseapp.com"
 
 images:
   - 'us-central1-docker.pkg.dev/$PROJECT_ID/cloud-run-source-deploy/cft-backend:$BUILD_ID'
