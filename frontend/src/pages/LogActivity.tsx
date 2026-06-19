@@ -130,8 +130,9 @@ export const LogActivity: React.FC = () => {
         setNotes('');
         setSuccess(false);
       }, 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to log activity');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to log activity';
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -152,8 +153,9 @@ export const LogActivity: React.FC = () => {
 
       setSuccess(true);
       setTimeout(() => setSuccess(false), 1500);
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to log activity');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to log activity';
+      setError(message);
     } finally {
       setLoading(false);
     }

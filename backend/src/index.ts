@@ -12,6 +12,7 @@ dotenv.config({ path: path.resolve(__dirname, '../../backend/.env') });
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import rateLimit from 'express-rate-limit';
 import routes from './routes';
 import { errorHandler } from './middleware/errorHandler';
 import { requestLogger, logError } from './middleware/logger';
@@ -83,17 +84,60 @@ validateEnvironment();
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Build CORS allowlist from environment variable (comma-separated list of origins)
+// Example: CORS_ORIGINS=https://myapp.web.app,https://myapp.firebaseapp.com
+const allowedOrigins = (process.env.CORS_ORIGINS || 'http://localhost:5173,http://localhost:4173')
+  .split(',')
+  .map((o) => o.trim())
+  .filter(Boolean);
+
 // Middleware
 app.use(requestLogger); // HTTP request/response logger (first!)
 app.use(helmet()); // Security headers
-app.use(cors()); // Enable CORS
+app.use(
+  cors({
+    origin: (origin, callback) => {
+      // Allow requests with no origin (e.g. curl, Postman, server-to-server)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      callback(new Error(`CORS: origin '${origin}' is not allowed`));
+    },
+    credentials: true,
+  })
+); // Enable CORS with origin allowlist
 app.use(express.json()); // Parse JSON bodies
 app.use(express.urlencoded({ extended: true })); // Parse URL-encoded bodies
 
-// Health check endpoint
+// ── Rate Limiting ───────────────────────────────────────────────────────────
+// General limiter: applied to all /api routes
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100,                  // max 100 requests per window per IP
+  standardHeaders: 'draft-7', // use RateLimit-* headers (RFC 9110)
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many requests. Please try again later.' } },
+});
+
+// Stricter limiter for write operations (log entries + quiz submissions)
+const writeLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 minute
+  max: 20,             // max 20 writes per minute per IP
+  standardHeaders: 'draft-7',
+  legacyHeaders: false,
+  message: { success: false, error: { code: 'TOO_MANY_REQUESTS', message: 'Too many write requests. Please slow down.' } },
+});
+
+// Health check endpoint (not rate-limited — used by Cloud Run health probes)
 app.get('/health', (_req, res) => {
   res.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
+
+// Apply general rate limit to all API routes
+app.use('/api', apiLimiter);
+
+// Apply stricter limits to write endpoints
+app.use('/api/logs/entries', writeLimiter);
+app.use('/api/quiz', writeLimiter);
 
 // API routes
 app.use('/api', routes);

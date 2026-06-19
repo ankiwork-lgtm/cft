@@ -1,14 +1,26 @@
 /**
  * User Initialization Middleware
- * Creates user document in Firestore on first sign-in
+ * Creates user document in Firestore on first sign-in.
+ *
+ * Performance: an in-memory Set caches initialized UIDs so the Firestore
+ * get/set only runs once per user per process lifetime (i.e. once per
+ * Cloud Run instance cold-start), not on every authenticated request.
  */
 
 import { Request, Response, NextFunction } from 'express';
 import { db } from '../config/firebase';
 
 /**
- * Middleware to ensure user document exists in Firestore
- * Creates document with default values if it doesn't exist
+ * Process-scoped cache of UIDs that have already been initialised.
+ * Cleared on process restart / Cloud Run instance recycle — that's fine,
+ * because the underlying Firestore doc persists.
+ */
+const initializedUserIds = new Set<string>();
+
+/**
+ * Middleware to ensure a Firestore user document exists.
+ * Creates the document with safe defaults on first visit; skips on all
+ * subsequent requests for the same UID within this process lifetime.
  */
 export const initializeUser = async (req: Request, res: Response, next: NextFunction) => {
   try {
@@ -22,10 +34,16 @@ export const initializeUser = async (req: Request, res: Response, next: NextFunc
       });
     }
 
-    const userRef = db.collection('users').doc(req.user.uid);
+    const uid = req.user.uid;
+
+    // Fast path: UID already initialised in this process — skip Firestore entirely.
+    if (initializedUserIds.has(uid)) {
+      return next();
+    }
+
+    const userRef = db.collection('users').doc(uid);
     const userDoc = await userRef.get();
 
-    // If user document doesn't exist, create it with defaults
     if (!userDoc.exists) {
       const defaultUserData = {
         email: req.user.email || null,
@@ -36,10 +54,12 @@ export const initializeUser = async (req: Request, res: Response, next: NextFunc
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
       };
-
       await userRef.set(defaultUserData);
-      console.log(`✅ Created user document for uid: ${req.user.uid}`);
+      console.log(`✅ Created user document for uid: ${uid}`);
     }
+
+    // Mark as initialised so subsequent requests skip this check.
+    initializedUserIds.add(uid);
 
     next();
   } catch (error) {

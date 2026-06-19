@@ -17,6 +17,19 @@ import {
 } from '../utils/quizCalculator';
 import { NATIONAL_AVERAGE_CO2 } from '@cft/shared';
 
+/**
+ * Typed shape for the user document fields written after quiz completion.
+ * Keeps the Firestore write fully type-safe (no `any`).
+ */
+interface UserProfileUpdate {
+  quizCompleted: boolean;
+  quizAnswers: Record<string, string | number>;
+  baselineScore: number;
+  currentScore: number;
+  footprintEstimate: number;
+  goalTarget?: number;
+}
+
 const router = Router();
 
 /**
@@ -36,7 +49,17 @@ router.post(
   initializeUser,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user?.uid;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+          },
+        } as ApiResponse<never>);
+        return;
+      }
       const { responses, goalTarget } = req.body as SubmitQuizRequest;
 
       // Validate request
@@ -72,12 +95,12 @@ router.post(
         answersMap[r.questionId] = r.answer;
       });
 
-      // Prepare user document update
-      const userUpdate: any = {
+      // Prepare user document update (fully typed — no `any`)
+      const userUpdate: UserProfileUpdate = {
         quizCompleted: true,
         quizAnswers: answersMap,
         baselineScore: calculation.baselineScore,
-        currentScore: calculation.baselineScore, // Initially same as baseline
+        currentScore: calculation.baselineScore,
         footprintEstimate: calculation.footprintEstimate,
       };
 
@@ -140,7 +163,17 @@ router.get(
   verifyAuth,
   async (req: Request, res: Response): Promise<void> => {
     try {
-      const userId = req.user!.uid;
+      const userId = req.user?.uid;
+      if (!userId) {
+        res.status(401).json({
+          success: false,
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'User not authenticated',
+          },
+        } as ApiResponse<never>);
+        return;
+      }
 
       // Get user document
       const userDoc = await db.collection('users').doc(userId).get();

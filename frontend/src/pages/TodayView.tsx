@@ -5,7 +5,7 @@
  */
 
 import React, { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { ActivityCategory, ActivityLogEntry } from '@cft/shared';
 import { useAuth } from '../contexts/AuthContext';
@@ -40,6 +40,7 @@ const CATEGORY_DISPLAY: Record<ActivityCategory, CategoryDisplay> = {
 
 export const TodayView: React.FC = () => {
   const { currentUser } = useAuth();
+  const navigate = useNavigate();
   const [dayData, setDayData] = useState<DayData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,11 +65,12 @@ export const TodayView: React.FC = () => {
 
         const daily = annualTarget / 365;
         setDailyTarget(parseFloat(daily.toFixed(2)));
-      } catch (err: any) {
+      } catch (err: unknown) {
         // 404 = quiz not taken yet (expected)
         // 401 = Firebase auth token not yet ready on mount (expected race condition)
         // 0   = network error (handled separately by apiRequest)
-        const isSilentError = err?.status === 404 || err?.status === 401;
+        const status = (err as { status?: number })?.status;
+        const isSilentError = status === 404 || status === 401;
         if (!isSilentError) {
           console.error('Failed to fetch user data:', err);
         }
@@ -90,8 +92,9 @@ export const TodayView: React.FC = () => {
       const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
       const response = await api.get<any>(`/logs/entries?date=${today}`);
       setDayData(response.data);  // apiRequest already unwraps JSON: response = { success, data }
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to load today\'s activities');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Failed to load today's activities";
+      setError(message);
     } finally {
       setLoading(false);
     }
@@ -117,8 +120,9 @@ export const TodayView: React.FC = () => {
       await api.delete(`/logs/entries/${pendingDeleteId}`);
       // Refresh data
       await fetchTodayData();
-    } catch (err: any) {
-      setError(err.response?.data?.error?.message || 'Failed to delete entry');
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Failed to delete entry';
+      setError(message);
     } finally {
       setDeletingId(null);
       setPendingDeleteId(null);
@@ -338,7 +342,7 @@ export const TodayView: React.FC = () => {
               title="No activities logged today"
               description="Start tracking your carbon footprint by logging your first activity"
               actionLabel="Log Your First Activity"
-              onAction={() => { window.location.href = '/log-activity'; }}
+              onAction={() => navigate('/log-activity')}
             />
           </div>
         )}

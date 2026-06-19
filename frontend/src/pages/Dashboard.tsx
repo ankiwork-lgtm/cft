@@ -86,8 +86,8 @@ export function Dashboard() {
       } else {
         setError('Failed to load dashboard data');
       }
-    } catch (error) {
-      console.error('Error loading dashboard:', error);
+    } catch (err: unknown) {
+      console.error('Error loading dashboard:', err);
       setError('Failed to load dashboard data');
     }
   };
@@ -304,7 +304,9 @@ export function Dashboard() {
           <div className="bg-white rounded-2xl p-6 shadow-soft border border-neutral-200 sm:col-span-2 lg:col-span-1">
             <div className="text-sm text-neutral-600 mb-1">Daily Average</div>
             <div className="text-3xl sm:text-4xl font-bold text-neutral-900 mb-2">
-              {(dashboardData.totalCO2 / dashboardData.dailyTotals.length).toFixed(1)} kg
+              {dashboardData.dailyTotals.length > 0
+                ? (dashboardData.totalCO2 / dashboardData.dailyTotals.length).toFixed(1)
+                : '0.0'} kg
             </div>
             <div className="text-sm text-neutral-500">per day</div>
           </div>
